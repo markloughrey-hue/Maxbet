@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Maxbet Romania Customer Intelligence — Powered by CRED</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#f4f4f6;
+    --panel:#ffffff;
+    --panel2:#f6f6f8;
+    --line:#e6e6ea;
+    --txt:#16161a;
+    --muted:#6b6b75;
+    --red:#e3000f;        /* Maxbet red */
+    --red-dark:#b3000c;
+    --red-soft:#fde7e8;
+    --charcoal:#24242a;   /* secondary accent */
+    --grey:#9aa0aa;
+    --amber:#c77a00;      /* warning / at-risk */
+    --green:#1a8f3c;      /* matched / positive */
+    --shadow:0 1px 3px rgba(20,20,30,.07),0 1px 2px rgba(20,20,30,.04);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:radial-gradient(1100px 520px at 88% -8%,rgba(227,0,15,.07),transparent 60%),
+               radial-gradient(900px 600px at -8% 4%,rgba(227,0,15,.04),transparent 55%),
+               var(--bg);
+    color:var(--txt);
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1240px;margin:0 auto;padding:28px 22px 64px}
+
+  /* Header */
+  .top{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:22px}
+  .logo{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.5px;font-size:18px}
+  .logo .cred{color:var(--red)}
+  .logo .x{color:var(--grey);font-weight:600}
+  .logo .max{color:var(--charcoal)}
+  .pill{font-size:11px;font-weight:600;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:5px 11px;background:var(--panel)}
+  h1{font-size:26px;margin:2px 0 4px;font-weight:800;letter-spacing:-.3px}
+  .sub{color:var(--muted);font-size:14px;max-width:790px}
+
+  /* Compliance badges */
+  .badges{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 26px}
+  .badge{display:flex;align-items:center;gap:7px;background:var(--panel);border:1px solid var(--line);
+    border-radius:10px;padding:8px 12px;font-size:12.5px;font-weight:600;box-shadow:var(--shadow)}
+  .badge .dot{width:7px;height:7px;border-radius:50%;background:var(--green)}
+
+  /* Regulatory banner */
+  .reg{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center;
+    background:linear-gradient(100deg,#fff1f1,#fff);
+    border:1px solid #f3c9cc;border-left:4px solid var(--red);border-radius:14px;padding:18px 22px;margin-bottom:26px;box-shadow:var(--shadow)}
+  .reg .icon{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:var(--red-soft);font-size:22px}
+  .reg h3{margin:0 0 4px;font-size:16px}
+  .reg p{margin:0;color:var(--muted);font-size:13.5px}
+  .reg b{color:var(--red-dark)}
+
+  /* KPI strip */
+  .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:30px}
+  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 16px 14px;box-shadow:var(--shadow)}
+  .kpi .label{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:600}
+  .kpi .val{font-size:26px;font-weight:800;margin-top:6px;letter-spacing:-.5px}
+  .kpi .meta{font-size:12px;margin-top:3px;color:var(--muted)}
+  .accent-red{color:var(--red)} .accent-charcoal{color:var(--charcoal)} .accent-grey{color:var(--grey)}
+
+  /* Section scaffolding */
+  section{margin-bottom:34px}
+  .sec-head{display:flex;align-items:baseline;gap:12px;margin-bottom:14px}
+  .sec-head h2{font-size:18px;margin:0;font-weight:800}
+  .sec-head .tag{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;
+    padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted);background:var(--panel)}
+  .sec-head .tag.optional{color:var(--grey);border-color:#d7dbe1;background:#f1f2f4}
+  .sec-sub{color:var(--muted);font-size:13.5px;margin:-6px 0 16px;max-width:860px}
+
+  .grid{display:grid;gap:16px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:var(--shadow)}
+  .panel h4{margin:0 0 4px;font-size:14.5px}
+  .panel .hint{color:var(--muted);font-size:12.5px;margin:0 0 14px}
+
+  /* Flow */
+  .flow{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;align-items:stretch;gap:0}
+  .step{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:var(--shadow)}
+  .step .n{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.5px}
+  .step h4{margin:8px 0 6px;font-size:15px}
+  .step p{margin:0;color:var(--muted);font-size:12.8px}
+  .step .chips{margin-top:10px;display:flex;gap:6px;flex-wrap:wrap}
+  .chip{font-size:11px;font-weight:600;padding:4px 8px;border-radius:8px;background:var(--panel2);border:1px solid var(--line)}
+  .chip.in{color:var(--red-dark);border-color:#f3c9cc;background:var(--red-soft)}
+  .chip.out{color:var(--charcoal);border-color:#d7dbe1;background:#eef0f3}
+  .arrow{display:grid;place-items:center;color:var(--grey);font-size:22px;width:46px}
+  .step.match{border-color:#f3c9cc;border-top:3px solid var(--red)}
+  .matchrate{font-size:24px;font-weight:800;color:var(--red)}
+
+  /* enriched profile cards */
+  .profiles{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .pcard{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:var(--shadow)}
+  .pcard .ph{display:flex;align-items:center;gap:12px;padding:16px 16px 12px;border-bottom:1px solid var(--line)}
+  .ava{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-weight:800;font-size:15px;color:#fff}
+  .pcard .pname{font-weight:700;font-size:14.5px}
+  .pcard .pmail{font-size:12px;color:var(--muted)}
+  .pcard .pin{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;padding:10px 16px 2px}
+  .rows{padding:6px 16px 16px}
+  .row{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px dashed var(--line);font-size:13px}
+  .row:last-child{border-bottom:none}
+  .row .k{color:var(--muted)}
+  .row .v{font-weight:600;text-align:right}
+  .tier{display:inline-block;font-size:10.5px;font-weight:800;padding:3px 9px;border-radius:999px;text-transform:uppercase;letter-spacing:.4px}
+  .tier.plat{background:var(--red-soft);color:var(--red-dark)}
+  .tier.gold{background:#eef0f3;color:var(--charcoal)}
+  .tier.std{background:#f1f2f4;color:var(--muted)}
+  .matchtag{margin-left:auto;font-size:10.5px;font-weight:700;color:var(--green);display:flex;align-items:center;gap:5px}
+  .matchtag .dot{width:6px;height:6px;border-radius:50%;background:var(--green)}
+
+  .c2b{grid-template-columns:1.15fr .85fr}
+  canvas{max-width:100%}
+
+  /* simulator */
+  .sim-top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:8px}
+  .sliderbox{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  input[type=range]{width:230px;accent-color:var(--red)}
+  .capval{font-size:30px;font-weight:800;color:var(--red);min-width:64px}
+  .simstats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:6px}
+  .simstat{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .simstat .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+  .simstat .v{font-size:23px;font-weight:800;margin-top:4px}
+
+  /* table */
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line)}
+  th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.5px;font-weight:700}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+  tbody tr:hover{background:#fafafb}
+  .bar{height:7px;border-radius:99px;background:var(--panel2);overflow:hidden;min-width:90px;border:1px solid var(--line)}
+  .bar i{display:block;height:100%;background:var(--red)}
+
+  /* predictive teaser */
+  .predcards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .pred .panel{border-style:dashed;border-color:#d2d6dd}
+  .pred .big{font-size:28px;font-weight:800;margin:4px 0 2px;color:var(--charcoal)}
+  .lock{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--grey);
+    background:#f1f2f4;border:1px solid #d7dbe1;border-radius:999px;padding:4px 10px;margin-top:10px}
+
+  footer{border-top:1px solid var(--line);margin-top:36px;padding-top:20px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  .cta{display:flex;align-items:center;gap:12px}
+  .btn{background:var(--red);color:#fff;font-weight:700;border:none;border-radius:10px;padding:11px 18px;font-size:13.5px;cursor:pointer}
+  .btn.ghost{background:var(--panel);color:var(--txt);border:1px solid var(--line)}
+  .disc{color:var(--muted);font-size:11.5px;max-width:520px}
+
+  @media(max-width:980px){
+    .kpis{grid-template-columns:repeat(2,1fr)}
+    .flow{grid-template-columns:1fr}
+    .arrow{transform:rotate(90deg);height:34px;width:auto}
+    .profiles,.predcards,.c2b{grid-template-columns:1fr}
+    .reg{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HEADER -->
+  <div class="top">
+    <div class="logo"><span class="cred">CRED</span><span class="x">×</span><span class="max">MAXBET ROMANIA</span></div>
+    <span class="pill">Sample matching example · Prepared for Maxbet Romania · Illustrative data</span>
+  </div>
+  <h1>Maxbet Romania — Customer Intelligence</h1>
+  <p class="sub">A worked example of what CRED enrichment unlocks: take a Romanian customer list of just <b>name + email</b>, match it against CRED's high-net-worth and affluence graph, and turn it into segmented, affordability-aware VIP intelligence — ready before Romania's proposed deposit-limit regulation lands. Built to show the EIP team what the output looks like on a book like yours.</p>
+
+  <div class="badges">
+    <div class="badge"><span class="dot"></span>SOC 2 Type II</div>
+    <div class="badge"><span class="dot"></span>GDPR-compliant</div>
+  </div>
+
+  <!-- REGULATORY BANNER -->
+  <div class="reg">
+    <div class="icon">⚖️</div>
+    <div>
+      <h3>Get ahead of Romania's proposed deposit cap</h3>
+      <p>Romania's regulator has been pushing for ~2 years to limit player activity to roughly <b>10% of monthly income</b> — on €3,000/mo, that's a €300 ceiling. It may not pass, but if it does, knowing affordability <i>in advance</i> lets Maxbet front-run it: protect compliant high-value play, flag at-risk spenders for affordability review, and keep CRM firepower on genuine VIPs instead of guessing. Use the simulator below to model any cap from 5–20%.</p>
+    </div>
+  </div>
+
+  <!-- KPI STRIP -->
+  <div class="kpis">
+    <div class="kpi"><div class="label">Customers ingested</div><div class="val">1.24M</div><div class="meta">name + email only</div></div>
+    <div class="kpi"><div class="label">Match rate</div><div class="val accent-red">90%</div><div class="meta">1.12M enriched profiles</div></div>
+    <div class="kpi"><div class="label">VIPs identified</div><div class="val accent-red">18,400</div><div class="meta">high affordability + engagement</div></div>
+    <div class="kpi"><div class="label">Avg disposable income</div><div class="val">€1,340<span style="font-size:13px;color:var(--muted)">/mo</span></div><div class="meta">across matched base</div></div>
+    <div class="kpi"><div class="label">Legal deposit headroom</div><div class="val accent-charcoal" id="kpiHeadroom">€160.1M</div><div class="meta">/mo at a 10% cap</div></div>
+  </div>
+
+  <!-- ENRICHMENT FLOW -->
+  <section>
+    <div class="sec-head"><h2>How enrichment works</h2><span class="tag">Data flow</span></div>
+    <p class="sec-sub">No PII leaves your control. You send a minimal list, we match and append intelligence on your hosted instance, and the enriched file is returned to you — GDPR-clean.</p>
+    <div class="flow">
+      <div class="step">
+        <div class="n">STEP 1 · YOU SEND</div>
+        <h4>Minimal customer list</h4>
+        <p>Just the basics needed for an accurate match.</p>
+        <div class="chips"><span class="chip in">Full name</span><span class="chip in">Email</span><span class="chip in">(optional) county</span></div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="step match">
+        <div class="n">STEP 2 · CRED MATCHES</div>
+        <h4>Identity resolution</h4>
+        <p>Matched against CRED's affluence & HNW graph.</p>
+        <div style="margin-top:10px"><span class="matchrate">~90%</span> <span style="color:var(--muted);font-size:12px">match rate</span></div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="step">
+        <div class="n">STEP 3 · YOU RECEIVE</div>
+        <h4>Enriched, segmented profiles</h4>
+        <p>Returned to you, ready for CRM and affordability work.</p>
+        <div class="chips"><span class="chip out">Income</span><span class="chip out">HNW flag</span><span class="chip out">Sport & interests</span><span class="chip out">VIP tier</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ENRICHED PROFILES -->
+  <section>
+    <div class="sec-head"><h2>From two fields to a full picture</h2><span class="tag">Sample output</span></div>
+    <p class="sec-sub">Illustrative enriched records from the Romanian book. The greyed line is what you sent us; the highlighted rows are what comes back.</p>
+    <div class="profiles">
+      <div class="pcard">
+        <div class="ph">
+          <div class="ava" style="background:linear-gradient(135deg,#e3000f,#ff5560)">AI</div>
+          <div><div class="pname">A. Ionescu</div><div class="pmail">a.ionescu@****.ro</div></div>
+          <span class="matchtag"><span class="dot"></span>Matched</span>
+        </div>
+        <div class="pin">Enriched fields</div>
+        <div class="rows">
+          <div class="row"><span class="k">Disposable income</span><span class="v">€9,200 / mo</span></div>
+          <div class="row"><span class="k">HNW indicator</span><span class="v" style="color:var(--red-dark)">High</span></div>
+          <div class="row"><span class="k">Sport preference</span><span class="v">Football, UFC</span></div>
+          <div class="row"><span class="k">Region</span><span class="v">Bucharest, RO</span></div>
+          <div class="row"><span class="k">Deposit cap @10%</span><span class="v" style="color:var(--red-dark)">€920 / mo</span></div>
+          <div class="row"><span class="k">CRED tier</span><span class="v"><span class="tier plat">Platinum VIP</span></span></div>
+        </div>
+      </div>
+      <div class="pcard">
+        <div class="ph">
+          <div class="ava" style="background:linear-gradient(135deg,#b3000c,#e3000f)">MD</div>
+          <div><div class="pname">M. Dumitru</div><div class="pmail">m.dumitru@****.ro</div></div>
+          <span class="matchtag"><span class="dot"></span>Matched</span>
+        </div>
+        <div class="pin">Enriched fields</div>
+        <div class="rows">
+          <div class="row"><span class="k">Disposable income</span><span class="v">€3,400 / mo</span></div>
+          <div class="row"><span class="k">HNW indicator</span><span class="v" style="color:var(--charcoal)">Medium</span></div>
+          <div class="row"><span class="k">Sport preference</span><span class="v">Tennis, Football</span></div>
+          <div class="row"><span class="k">Region</span><span class="v">Cluj-Napoca, RO</span></div>
+          <div class="row"><span class="k">Deposit cap @10%</span><span class="v" style="color:var(--red-dark)">€340 / mo</span></div>
+          <div class="row"><span class="k">CRED tier</span><span class="v"><span class="tier gold">Gold</span></span></div>
+        </div>
+      </div>
+      <div class="pcard">
+        <div class="ph">
+          <div class="ava" style="background:linear-gradient(135deg,#7c7c86,#9aa0aa)">ES</div>
+          <div><div class="pname">E. Stoica</div><div class="pmail">e.stoica@****.ro</div></div>
+          <span class="matchtag"><span class="dot"></span>Matched</span>
+        </div>
+        <div class="pin">Enriched fields</div>
+        <div class="rows">
+          <div class="row"><span class="k">Disposable income</span><span class="v">€680 / mo</span></div>
+          <div class="row"><span class="k">HNW indicator</span><span class="v">Low</span></div>
+          <div class="row"><span class="k">Sport preference</span><span class="v">Basketball</span></div>
+          <div class="row"><span class="k">Region</span><span class="v">Timișoara, RO</span></div>
+          <div class="row"><span class="k">Deposit cap @10%</span><span class="v" style="color:var(--red-dark)">€68 / mo</span></div>
+          <div class="row"><span class="k">CRED tier</span><span class="v"><span class="tier std">Standard</span></span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AFFORDABILITY + SEGMENTATION -->
+  <section>
+    <div class="sec-head"><h2>Affordability segmentation</h2><span class="tag">Income graph</span></div>
+    <p class="sec-sub">The matched Romanian base broken down by monthly disposable income. This is the lens that turns a generic deposit cap into a per-customer affordability number.</p>
+    <div class="grid c2b">
+      <div class="panel">
+        <h4>Matched base by disposable-income band</h4>
+        <p class="hint">Counts of enriched customers per monthly income bracket (EUR).</p>
+        <canvas id="incomeChart" height="240"></canvas>
+      </div>
+      <div class="panel">
+        <h4>VIP tier distribution</h4>
+        <p class="hint">Where affordability and engagement intersect.</p>
+        <canvas id="tierChart" height="240"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- DEPOSIT CAP SIMULATOR -->
+  <section>
+    <div class="sec-head"><h2>Deposit-cap simulator</h2><span class="tag">Front-run the regulation</span></div>
+    <p class="sec-sub">Drag the cap to model the proposed rule. Headroom = the legally compliant monthly deposit volume across the matched base; VIPs = customers whose affordable cap still clears Maxbet's €500/mo high-value threshold.</p>
+    <div class="panel">
+      <div class="sim-top">
+        <div class="sliderbox">
+          <span style="color:var(--muted);font-size:13px">Deposit cap</span>
+          <input type="range" id="capSlider" min="5" max="20" value="10" step="1" />
+          <span class="capval" id="capLabel">10%</span>
+          <span style="color:var(--muted);font-size:13px">of disposable income</span>
+        </div>
+      </div>
+      <div class="simstats">
+        <div class="simstat"><div class="l">Compliant deposit headroom</div><div class="v accent-charcoal" id="simHeadroom">€160.1M<span style="font-size:12px;color:var(--muted)">/mo</span></div></div>
+        <div class="simstat"><div class="l">VIPs above €500/mo cap</div><div class="v accent-red" id="simVip">66,000</div></div>
+        <div class="simstat"><div class="l">High spenders to review</div><div class="v" style="color:var(--amber)" id="simRisk">31,500</div></div>
+      </div>
+      <p class="hint" style="margin-top:14px;margin-bottom:0">"High spenders to review" estimates accounts whose current deposit behaviour would exceed their affordable cap — the population your responsible-gambling and marketing teams should triage first.</p>
+    </div>
+  </section>
+
+  <!-- REGIONAL COVERAGE -->
+  <section>
+    <div class="sec-head"><h2>Match quality & coverage by Romanian region</h2><span class="tag">Data quality</span></div>
+    <p class="sec-sub">Transparency on where the graph is strong. You see exactly what was ingested, matched, and the resulting coverage — county by county across Romania.</p>
+    <div class="grid c2b">
+      <div class="panel">
+        <h4>Match rate by county</h4>
+        <p class="hint">Share of ingested customers successfully enriched.</p>
+        <canvas id="regionChart" height="260"></canvas>
+      </div>
+      <div class="panel" style="padding:0;overflow:hidden">
+        <table>
+          <thead><tr><th>County</th><th class="num">Ingested</th><th class="num">Matched</th><th>Coverage</th></tr></thead>
+          <tbody id="regionTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- PREDICTIVE LAYER -->
+  <section class="pred">
+    <div class="sec-head"><h2>Optional predictive layer</h2><span class="tag optional">Layer 2 · on request</span></div>
+    <p class="sec-sub">Once enrichment is in place, we can build models on top of it — for example, predicted net win/loss, churn risk, and lifetime value, all segmentable by income band. A conversation for when you're ready; shown here as illustration only.</p>
+    <div class="predcards">
+      <div class="panel">
+        <h4>Predicted 12-mo net gaming revenue</h4>
+        <div class="big">€41.2M</div>
+        <p class="hint" style="margin:0">Concentrated in the top two income bands.</p>
+        <span class="lock">🔒 Model available on request</span>
+      </div>
+      <div class="panel">
+        <h4>Win / loss propensity</h4>
+        <div class="big">±€620<span style="font-size:13px;color:var(--muted)"> / VIP / mo</span></div>
+        <p class="hint" style="margin:0">Expected net position, segmentable by income bracket.</p>
+        <span class="lock">🔒 Model available on request</span>
+      </div>
+      <div class="panel">
+        <h4>VIP churn risk (90-day)</h4>
+        <div class="big">7.4%</div>
+        <p class="hint" style="margin:0">Flag high-value accounts before they lapse.</p>
+        <span class="lock">🔒 Model available on request</span>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="cta">
+      <button class="btn" onclick="window.print()">Export / print</button>
+      <button class="btn ghost">Book the deep-dive</button>
+    </div>
+    <p class="disc">Prepared by <b>Mark Loughrey</b>, CRED · mark.loughrey@credinvestments.com · sample matching example for <b>Maxbet Romania</b>. All figures, names and emails on this page are <b>illustrative</b> for demonstration. In production, matching runs on Maxbet's hosted instance (SOC 2 Type II, GDPR-compliant).</p>
+  </footer>
+
+</div>
+
+<script>
+const fmtM = n => '€' + (n/1e6).toFixed(1) + 'M';
+const fmtN = n => n.toLocaleString('en-US');
+
+// ---- Illustrative income bands (matched base ~1.116M) ----
+const bands = [
+  {label:'< €500',  count:312000, mid:300},
+  {label:'€500–1k', count:358000, mid:750},
+  {label:'€1k–2k',  count:248000, mid:1500},
+  {label:'€2k–4k',  count:132000, mid:3000},
+  {label:'€4k–8k',  count:51000,  mid:6000},
+  {label:'€8k+',    count:15000,  mid:11000},
+];
+
+Chart.defaults.color = '#6b6b75';
+Chart.defaults.borderColor = '#e6e6ea';
+Chart.defaults.font.family = 'Inter, system-ui, sans-serif';
+
+// Income bar — light-to-dark red ramp
+new Chart(document.getElementById('incomeChart'), {
+  type:'bar',
+  data:{labels:bands.map(b=>b.label),
+    datasets:[{data:bands.map(b=>b.count),
+      backgroundColor:['#f4a6aa','#ee7b81','#e84a52','#e3000f','#b3000c','#7d0008'],borderRadius:6}]},
+  options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmtN(c.raw)+' customers'}}},
+    scales:{y:{ticks:{callback:v=>(v/1000)+'k'},grid:{color:'#ededf0'}},x:{grid:{display:false}}}}
+});
+
+// Tier doughnut
+new Chart(document.getElementById('tierChart'), {
+  type:'doughnut',
+  data:{labels:['Platinum VIP','Gold','Silver','Standard'],
+    datasets:[{data:[15000,51000,182000,868000],
+      backgroundColor:['#e3000f','#f17a80','#b8bcc4','#3a3a42'],borderColor:'#ffffff',borderWidth:3}]},
+  options:{cutout:'62%',plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:14,font:{size:12}}},
+    tooltip:{callbacks:{label:c=>c.label+': '+fmtN(c.raw)}}}}
+});
+
+// ---- Romanian regions ----
+const regions = [
+  {m:'Bucharest',ing:380000,rate:0.91},
+  {m:'Cluj',ing:210000,rate:0.90},
+  {m:'Timiș',ing:180000,rate:0.90},
+  {m:'Constanța',ing:175000,rate:0.90},
+  {m:'Iași',ing:165000,rate:0.89},
+  {m:'Brașov',ing:130000,rate:0.88},
+];
+new Chart(document.getElementById('regionChart'), {
+  type:'bar',
+  data:{labels:regions.map(r=>r.m),
+    datasets:[{data:regions.map(r=>Math.round(r.rate*100)),
+      backgroundColor:'#e3000f',borderRadius:6}]},
+  options:{indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.raw+'% matched'}}},
+    scales:{x:{min:75,max:100,ticks:{callback:v=>v+'%'},grid:{color:'#ededf0'}},y:{grid:{display:false}}}}
+});
+document.getElementById('regionTable').innerHTML = regions.map(r=>{
+  const matched=Math.round(r.ing*r.rate);
+  return `<tr><td>${r.m}</td><td class="num">${fmtN(r.ing)}</td><td class="num">${fmtN(matched)}</td>
+    <td><div class="bar"><i style="width:${Math.round(r.rate*100)}%"></i></div>
+    <span style="font-size:11px;color:var(--muted)">${Math.round(r.rate*100)}%</span></td></tr>`;
+}).join('');
+
+// ---- Deposit-cap simulator ----
+const HV_THRESHOLD = 500; // monthly high-value deposit threshold (EUR)
+const slider = document.getElementById('capSlider');
+function recompute(){
+  const pct = +slider.value;
+  const frac = pct/100;
+  let headroom = 0, vips = 0;
+  bands.forEach(b=>{
+    headroom += b.count * b.mid * frac;
+    if(b.mid * frac >= HV_THRESHOLD) vips += b.count;
+  });
+  document.getElementById('capLabel').textContent = pct+'%';
+  document.getElementById('simHeadroom').innerHTML = fmtM(headroom)+'<span style="font-size:12px;color:var(--muted)">/mo</span>';
+  document.getElementById('simVip').textContent = fmtN(vips);
+  document.getElementById('simRisk').textContent = fmtN(Math.round(315000/pct)); // 10% -> 31,500
+  document.getElementById('kpiHeadroom').textContent = fmtM(headroom);
+}
+slider.addEventListener('input', recompute);
+recompute();
+</script>
+</body>
+</html>
